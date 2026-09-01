@@ -1,0 +1,14 @@
+@import './base.css';
+
+#app {
+  min-height: 100vh;
+}
+
+body {
+  margin: 0;
+  background: var(--el-bg-color-page);
+}
+
+a {
+  color: var(--el-color-primary);
+}
