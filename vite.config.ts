@@ -24,6 +24,13 @@ fs.writeFileSync(
 // https://vite.dev/config/
 export default defineConfig({
   base: './',
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: false,
+      },
+    },
+  },
   plugins: [
     vue(),
     vueDevTools({
