@@ -1,28 +1,9 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { createInterface } from 'node:readline/promises'
 import { execSync } from 'node:child_process'
 
 const dist = 'dist'
-
-function isValidTag(t) {
-  return /^v\d+\.\d+\.\d+$/.test(t)
-}
-
-async function getTag() {
-  const arg = process.argv[2] ?? ''
-  if (isValidTag(arg)) return arg
-  const rl = createInterface({ input: process.stdin, output: process.stdout })
-  let input
-  while (!isValidTag(input)) {
-    input = await rl.question('请输入 tag (格式 vx.y.z,例如 v1.0.1): ')
-    if (!isValidTag(input)) {
-      console.error(`格式不正确: "${input}",请重新输入`)
-    }
-  }
-  rl.close()
-  return input
-}
+const branch = 'master'
 
 function findAsset(ext) {
   const assetsDir = join(dist, 'assets')
@@ -39,8 +20,6 @@ async function main() {
     console.error('dist 目录不存在,请先执行构建 (pnpm build)')
     process.exit(1)
   }
-
-  const tag = await getTag()
 
   const indexHtmlPath = join(dist, 'index.html')
   if (!existsSync(indexHtmlPath)) {
@@ -69,7 +48,7 @@ async function main() {
     process.exit(1)
   }
 
-  const base = `https://cdn.jsdelivr.net/gh/2999/cargo-packing-demos@${tag}/dist`
+  const base = `https://cdn.jsdelivr.net/gh/2999/cargo-packing-demos@${branch}/dist`
   const html = `<!DOCTYPE html>
 <html lang="">
 
@@ -90,15 +69,12 @@ ${cssFile ? `  <link rel="stylesheet" crossorigin href="${base}/assets/${cssFile
 
   mkdirSync('docs', { recursive: true })
   writeFileSync(join('docs', 'index.html'), html)
-  console.log(`已生成 docs/index.html (tag: ${tag}, js: ${jsFile}${cssFile ? `, css: ${cssFile}` : ', 无 css 文件'})`)
+  console.log(`已生成 docs/index.html (js: ${jsFile}${cssFile ? `, css: ${cssFile}` : ', 无 css 文件'})`)
 
-  execSync('git add docs/index.html', { stdio: 'inherit' })
-  execSync('git commit -m "add index-run.html"', { stdio: 'inherit' })
-  const branch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
+  execSync('git add .', { stdio: 'inherit' })
+  execSync('git commit -m "add index.html to docs"', { stdio: 'inherit' })
   execSync(`git push origin ${branch}`, { stdio: 'inherit' })
-  execSync(`git tag ${tag}`, { stdio: 'inherit' })
-  execSync(`git push origin ${tag}`, { stdio: 'inherit' })
-  console.log(`已推送分支 ${branch} 和 tag ${tag} 到远端`)
+  console.log(`已提交并推送到远端 ${branch}`)
 }
 
 main()
