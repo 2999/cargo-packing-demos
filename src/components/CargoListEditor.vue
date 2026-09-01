@@ -59,27 +59,106 @@ function vOf(item: SelectedCargo): string {
         <el-button link type="danger" size="small" @click="store.clearCargo()">全部清空</el-button>
       </div>
 
+      <TransitionGroup name="ci" tag="div" class="cargo-list__items">
+        <div v-for="(item, index) in store.params.cargoList" :key="item.id" class="cargo-item">
+          <div class="cargo-item__row">
+            <span class="cargo-item__color" :style="{ backgroundColor: item.color }" />
+            <div class="cargo-item__main">
+              <div class="cargo-item__head">
+                <div class="cargo-item__name">{{ item.name }}</div>
+                <div class="cargo-item__qty">
+                  <el-input-number :model-value="item.quantity" :min="1" size="small" controls-position="right"
+                    @update:model-value="(v: number | undefined) => (item.quantity = v ?? 1)" />
+                </div>
+              </div>
+              <div class="cargo-item__foot">
+                <div class="cargo-item__meta">
+                  {{ item.spec.length }}×{{ item.spec.width }}×{{ item.spec.height }} mm · 旋转
+                  {{ item.rotation.label }} · 合计 {{ item.quantity }}件 / {{ wOf(item) }}kg /
+                  {{ vOf(item) }}m³
+                </div>
+                <div class="cargo-item__ops">
+                  <el-button link type="primary" size="small" @click="toggleExpand(item)">
+                    {{ expandId === item.id ? '收起' : '参数' }}
+                  </el-button>
+                  <el-button link type="primary" size="small" @click="duplicate(index)">复制</el-button>
+                  <el-button link type="danger" size="small" @click="store.removeCargo(index)">
+                    移除
+                  </el-button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <el-collapse-transition>
+            <div v-show="expandId === item.id" class="cargo-item__panel">
+              <div class="field-group">
+                <div class="field">
+                  <span class="field__label">长(mm)</span>
+                  <el-input-number :model-value="item.spec.length" :min="1" size="small" controls-position="right"
+                    @update:model-value="
+                      (v: number | undefined) => (item.spec.length = v ?? item.spec.length)
+                    " />
+                </div>
+                <div class="field">
+                  <span class="field__label">宽(mm)</span>
+                  <el-input-number :model-value="item.spec.width" :min="1" size="small" controls-position="right"
+                    @update:model-value="
+                      (v: number | undefined) => (item.spec.width = v ?? item.spec.width)
+                    " />
+                </div>
+                <div class="field">
+                  <span class="field__label">高(mm)</span>
+                  <el-input-number :model-value="item.spec.height" :min="1" size="small" controls-position="right"
+                    @update:model-value="
+                      (v: number | undefined) => (item.spec.height = v ?? item.spec.height)
+                    " />
+                </div>
+                <div class="field">
+                  <span class="field__label">单件重(kg)</span>
+                  <el-input-number :model-value="item.weight" :min="0" :step="0.1" size="small"
+                    controls-position="right" @update:model-value="(v: number | undefined) => (item.weight = v ?? 0)" />
+                </div>
+              </div>
+
+              <div class="field">
+                <span class="field__label">旋转方向</span>
+                <el-radio-group :model-value="item.rotation.key" class="rotation-group" @update:model-value="
+                  (key: string) => {
+                    const dir = CARGO_DIRECTIONS.find((d) => d.key === key)
+                    if (dir) item.rotation = dir
+                  }
+                ">
+                  <el-radio-button v-for="dir in CARGO_DIRECTIONS" :key="dir.key" :value="dir.key"
+                    class="rotation-option">
+                    <DirectionDiagram :spec="item.spec" :direction="dir" :active="item.rotation.key === dir.key"
+                      show-dimensions />
+                    <span class="rotation-option__label">{{ dir.label }}</span>
+                    <span class="rotation-option__note">{{ dir.note }}</span>
+                  </el-radio-button>
+                </el-radio-group>
+              </div>
+
+              <div class="field">
+                <span class="field__label">备注</span>
+                <el-input :model-value="item.remark" size="small" placeholder="自定义备注(可选)"
+                  @update:model-value="(v: string) => (item.remark = v ?? '')" />
+              </div>
+            </div>
+          </el-collapse-transition>
+        </div>
+      </TransitionGroup>
       <div class="cargo-cap">
         <div class="cargo-cap__row">
           <span class="cargo-cap__label">体积</span>
-          <el-progress
-            class="cargo-cap__bar"
-            :percentage="Math.min(100, volPct)"
-            :color="barColor(volPct)"
-            :stroke-width="8"
-            :show-text="false"
-          />
+          <el-progress class="cargo-cap__bar" :percentage="Math.min(100, volPct)" :color="barColor(volPct)"
+            :stroke-width="8" :show-text="false" />
           <span class="cargo-cap__val" :class="{ 'is-over': volPct > 100 }">{{ volPct }}%</span>
         </div>
         <div class="cargo-cap__row">
           <span class="cargo-cap__label">重量</span>
-          <el-progress
-            class="cargo-cap__bar"
-            :percentage="Math.min(100, wtPct)"
-            :color="barColor(wtPct)"
-            :stroke-width="8"
-            :show-text="false"
-          />
+          <el-progress class="cargo-cap__bar" :percentage="Math.min(100, wtPct)" :color="barColor(wtPct)"
+            :stroke-width="8" :show-text="false" />
           <span class="cargo-cap__val" :class="{ 'is-over': wtPct > 100 }">{{ wtPct }}%</span>
         </div>
         <div class="cargo-cap__sub">
@@ -91,138 +170,6 @@ function vOf(item: SelectedCargo): string {
           </template>
         </div>
       </div>
-
-      <TransitionGroup name="ci" tag="div" class="cargo-list__items">
-        <div v-for="(item, index) in store.params.cargoList" :key="item.id" class="cargo-item">
-        <div class="cargo-item__row">
-          <span class="cargo-item__color" :style="{ backgroundColor: item.color }" />
-          <div class="cargo-item__main">
-            <div class="cargo-item__head">
-              <div class="cargo-item__name">{{ item.name }}</div>
-              <div class="cargo-item__qty">
-                <el-input-number
-                  :model-value="item.quantity"
-                  :min="1"
-                  size="small"
-                  controls-position="right"
-                  @update:model-value="(v: number | undefined) => (item.quantity = v ?? 1)"
-                />
-              </div>
-            </div>
-            <div class="cargo-item__foot">
-              <div class="cargo-item__meta">
-                {{ item.spec.length }}×{{ item.spec.width }}×{{ item.spec.height }} mm · 旋转
-                {{ item.rotation.label }} · 合计 {{ item.quantity }}件 / {{ wOf(item) }}kg /
-                {{ vOf(item) }}m³
-              </div>
-              <div class="cargo-item__ops">
-                <el-button link type="primary" size="small" @click="toggleExpand(item)">
-                  {{ expandId === item.id ? '收起' : '参数' }}
-                </el-button>
-                <el-button link type="primary" size="small" @click="duplicate(index)">复制</el-button>
-                <el-button link type="danger" size="small" @click="store.removeCargo(index)">
-                  移除
-                </el-button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <el-collapse-transition>
-          <div v-show="expandId === item.id" class="cargo-item__panel">
-            <div class="field-group">
-              <div class="field">
-                <span class="field__label">规格 长(mm)</span>
-                <el-input-number
-                  :model-value="item.spec.length"
-                  :min="1"
-                  size="small"
-                  controls-position="right"
-                  @update:model-value="
-                    (v: number | undefined) => (item.spec.length = v ?? item.spec.length)
-                  "
-                />
-              </div>
-              <div class="field">
-                <span class="field__label">宽(mm)</span>
-                <el-input-number
-                  :model-value="item.spec.width"
-                  :min="1"
-                  size="small"
-                  controls-position="right"
-                  @update:model-value="
-                    (v: number | undefined) => (item.spec.width = v ?? item.spec.width)
-                  "
-                />
-              </div>
-              <div class="field">
-                <span class="field__label">高(mm)</span>
-                <el-input-number
-                  :model-value="item.spec.height"
-                  :min="1"
-                  size="small"
-                  controls-position="right"
-                  @update:model-value="
-                    (v: number | undefined) => (item.spec.height = v ?? item.spec.height)
-                  "
-                />
-              </div>
-              <div class="field">
-                <span class="field__label">单件重(kg)</span>
-                <el-input-number
-                  :model-value="item.weight"
-                  :min="0"
-                  :step="0.1"
-                  size="small"
-                  controls-position="right"
-                  @update:model-value="(v: number | undefined) => (item.weight = v ?? 0)"
-                />
-              </div>
-            </div>
-
-            <div class="field">
-              <span class="field__label">旋转方向</span>
-              <el-radio-group
-                :model-value="item.rotation.key"
-                class="rotation-group"
-                @update:model-value="
-                  (key: string) => {
-                    const dir = CARGO_DIRECTIONS.find((d) => d.key === key)
-                    if (dir) item.rotation = dir
-                  }
-                "
-              >
-                <el-radio-button
-                  v-for="dir in CARGO_DIRECTIONS"
-                  :key="dir.key"
-                  :value="dir.key"
-                  class="rotation-option"
-                >
-                  <DirectionDiagram
-                    :spec="item.spec"
-                    :direction="dir"
-                    :active="item.rotation.key === dir.key"
-                    show-dimensions
-                  />
-                  <span class="rotation-option__label">{{ dir.label }}</span>
-                  <span class="rotation-option__note">{{ dir.note }}</span>
-                </el-radio-button>
-              </el-radio-group>
-            </div>
-
-            <div class="field">
-              <span class="field__label">备注</span>
-              <el-input
-                :model-value="item.remark"
-                size="small"
-                placeholder="自定义备注(可选)"
-                @update:model-value="(v: string) => (item.remark = v ?? '')"
-              />
-            </div>
-          </div>
-        </el-collapse-transition>
-        </div>
-      </TransitionGroup>
     </template>
   </div>
 </template>
@@ -233,6 +180,7 @@ function vOf(item: SelectedCargo): string {
   flex-direction: column;
   gap: 8px;
 }
+
 .cargo-list__header {
   display: flex;
   align-items: center;
@@ -240,6 +188,7 @@ function vOf(item: SelectedCargo): string {
   font-size: 13px;
   color: var(--el-text-color-secondary);
 }
+
 .cargo-cap {
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
@@ -250,26 +199,31 @@ function vOf(item: SelectedCargo): string {
   gap: 6px;
   animation: cap-in 0.35s ease both;
 }
+
 @keyframes cap-in {
   from {
     opacity: 0;
     transform: translateY(-6px);
   }
 }
+
 .cargo-cap__row {
   display: flex;
   align-items: center;
   gap: 8px;
 }
+
 .cargo-cap__label {
   font-size: 12px;
   color: var(--el-text-color-secondary);
   width: 28px;
   flex-shrink: 0;
 }
+
 .cargo-cap__bar {
   flex: 1;
 }
+
 .cargo-cap__val {
   font-size: 12px;
   color: var(--el-text-color-regular);
@@ -277,10 +231,12 @@ function vOf(item: SelectedCargo): string {
   text-align: right;
   flex-shrink: 0;
 }
+
 .cargo-cap__val.is-over {
   color: var(--el-color-danger);
   font-weight: 600;
 }
+
 .cargo-cap__sub {
   font-size: 12px;
   color: var(--el-text-color-secondary);
@@ -289,59 +245,72 @@ function vOf(item: SelectedCargo): string {
   gap: 6px;
   flex-wrap: wrap;
 }
+
 .cargo-list__items {
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
+
 .ci-enter-active {
   transition: opacity 0.3s ease, transform 0.3s ease;
   animation: ci-flash 1s ease 0.3s both;
 }
+
 .ci-enter-from {
   opacity: 0;
   transform: translateY(-10px);
 }
+
 @keyframes ci-flash {
+
   0%,
   100% {
     box-shadow: 0 0 0 0 rgba(64, 158, 255, 0);
   }
+
   35% {
     box-shadow: 0 0 0 4px var(--el-color-primary-light-7);
     border-color: var(--el-color-primary);
   }
 }
+
 .ci-leave-active {
   transition: opacity 0.22s ease, transform 0.22s ease;
   position: absolute;
   width: 100%;
 }
+
 .ci-leave-to {
   opacity: 0;
   transform: translateX(24px);
 }
+
 .ci-move {
   transition: transform 0.3s ease;
 }
+
 .cargo-item {
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
   background: var(--el-bg-color);
 }
+
 .cargo-item__row {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
 }
+
 .cargo-item__color {
   width: 10px;
   height: 32px;
   border-radius: 3px;
   flex-shrink: 0;
 }
+
 .cargo-item__main {
   flex: 1;
   min-width: 0;
@@ -349,15 +318,18 @@ function vOf(item: SelectedCargo): string {
   flex-direction: column;
   gap: 6px;
 }
+
 .cargo-item__head {
   display: flex;
   align-items: center;
   gap: 12px;
 }
+
 .cargo-item__head .cargo-item__name {
   flex: 1;
   min-width: 0;
 }
+
 .cargo-item__name {
   font-weight: 600;
   font-size: 14px;
@@ -365,31 +337,38 @@ function vOf(item: SelectedCargo): string {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .cargo-item__foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
+
 .cargo-item__ops {
   display: flex;
   align-items: center;
   flex-shrink: 0;
 }
-.cargo-item__ops .el-button + .el-button {
+
+.cargo-item__ops .el-button+.el-button {
   margin-left: 8px;
 }
+
 .cargo-item__meta {
   color: var(--el-text-color-secondary);
   font-size: 12px;
 }
+
 .cargo-item__qty {
   width: 110px;
   flex-shrink: 0;
 }
+
 .cargo-item__qty :deep(.el-input-number) {
   width: 100%;
 }
+
 .cargo-item__panel {
   border-top: 1px dashed var(--el-border-color-lighter);
   padding: 14px 12px;
@@ -397,25 +376,34 @@ function vOf(item: SelectedCargo): string {
   flex-direction: column;
   gap: 14px;
 }
+
 .field-group {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 10px;
 }
+
 .field {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
+
+.field :deep(.el-input-number) {
+  width: 100%;
+}
+
 .field__label {
   font-size: 12px;
   color: var(--el-text-color-secondary);
 }
+
 .rotation-group {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
   gap: 8px;
 }
+
 .rotation-option {
   display: flex;
   flex-direction: column;
@@ -430,6 +418,7 @@ function vOf(item: SelectedCargo): string {
   transition: all 0.15s;
   height: auto;
 }
+
 .rotation-option :deep(.el-radio-button__inner) {
   display: flex;
   flex-direction: column;
@@ -443,18 +432,22 @@ function vOf(item: SelectedCargo): string {
   height: auto;
   border-radius: 0;
 }
+
 .rotation-option .direction-diagram {
   width: 72px;
   height: 72px;
 }
+
 .rotation-option__label {
   font-weight: 600;
   color: var(--el-text-color-primary);
 }
+
 .rotation-option__note {
   font-size: 11px;
   color: var(--el-text-color-secondary);
 }
+
 .rotation-option.is-active {
   border-color: var(--el-color-primary);
   background: var(--el-color-primary-light-9);

@@ -261,15 +261,6 @@ function dockConsole() {
           <div class="panel-section__title">
             <span>装柜列表</span>
             <div class="demo9__list-ops">
-              <el-badge :value="store.history.length" :hidden="store.history.length === 0">
-                <el-button size="small" data-testid="history-entry" @click="showHistory = true">
-                  🕘 历史
-                </el-button>
-              </el-badge>
-              <el-radio-group v-model="viewMode" size="small" data-testid="view-toggle">
-                <el-radio-button value="card">卡片</el-radio-button>
-                <el-radio-button value="table">表格</el-radio-button>
-              </el-radio-group>
               <el-popover v-model:visible="popVisible" placement="bottom-end" :width="420" trigger="click">
                 <template #reference>
                   <el-button type="primary" size="small" data-testid="quick-pick"> + 选货物 </el-button>
@@ -291,7 +282,17 @@ function dockConsole() {
                   </div>
                 </div>
               </el-popover>
+              <el-radio-group v-if="store.params.cargoList.length > 0" v-model="viewMode" size="small"
+                data-testid="view-toggle">
+                <el-radio-button value="card">卡片</el-radio-button>
+                <el-radio-button value="table">表格</el-radio-button>
+              </el-radio-group>
             </div>
+            <el-badge :value="store.history.length" :hidden="store.history.length === 0">
+              <el-button size="small" data-testid="history-entry" @click="showHistory = true">
+                🕘 历史
+              </el-button>
+            </el-badge>
           </div>
 
           <!-- 卡片流(默认，方案一) -->
@@ -365,24 +366,36 @@ function dockConsole() {
             </el-table>
             <!-- 批量操作条：置于表格下方 -->
             <div v-if="selectedRows.length" class="batch-bar" data-testid="batch-bar">
-              <span class="batch-bar__count">已选 {{ selectedRows.length }} 项</span>
+              <span class="batch-bar__count">批量设置（已选 {{ selectedRows.length }} 项）</span>
               <div class="batch-bar__ops">
-                <el-input-number v-model="batchQty" :min="1" :max="999" size="small" controls-position="right"
-                  style="width: 96px" />
-                <el-button size="small" data-testid="batch-set" @click="batchSetQty">设为</el-button>
-                <el-input-number v-model="batchDelta" :min="1" :max="999" size="small" controls-position="right"
-                  style="width: 96px" />
-                <el-button size="small" data-testid="batch-more" @click="batchShift(1)">＋N</el-button>
-                <el-button size="small" data-testid="batch-less" @click="batchShift(-1)">−N</el-button>
-                <el-select v-model="batchRotation" size="small" placeholder="旋转方向" style="width: 110px">
-                  <el-option v-for="d in CARGO_DIRECTIONS" :key="d.key" :label="d.label" :value="d.key" />
-                </el-select>
-                <el-button size="small" :disabled="!batchRotation" data-testid="batch-rotate" @click="batchSetRotation">
-                  旋转
-                </el-button>
-                <el-button size="small" type="danger" plain data-testid="batch-remove" @click="batchRemove">
-                  删除
-                </el-button>
+                <div class="batch-bar__op_item">
+                  <span class="batch-bar__op_label">固定数量</span>
+                  <el-input-number v-model="batchQty" :min="1" :max="999" size="small" controls-position="right"
+                    style="width: 96px" />
+                  <el-button size="small" data-testid="batch-set" @click="batchSetQty">ok</el-button>
+                </div>
+                <div class="batch-bar__op_item">
+                  <span class="batch-bar__op_label">增减数量</span>
+                  <el-input-number v-model="batchDelta" :min="1" :max="999" size="small" controls-position="right"
+                    style="width: 96px" />
+                  <el-button size="small" data-testid="batch-more" @click="batchShift(1)">全部＋N</el-button>
+                  <el-button size="small" data-testid="batch-less" @click="batchShift(-1)">全部−N</el-button>
+                </div>
+                <div class="batch-bar__op_item">
+                  <span class="batch-bar__op_label">旋转方向</span>
+                  <el-select v-model="batchRotation" size="small" placeholder="旋转方向" style="width: 110px">
+                    <el-option v-for="d in CARGO_DIRECTIONS" :key="d.key" :label="d.label" :value="d.key" />
+                  </el-select>
+                  <el-button size="small" :disabled="!batchRotation" data-testid="batch-rotate"
+                    @click="batchSetRotation">
+                    ok
+                  </el-button>
+                </div>
+                <div class="batch-bar__op_item">
+                  <el-button size="small" type="danger" plain data-testid="batch-remove" @click="batchRemove">
+                    全部删除
+                  </el-button>
+                </div>
               </div>
             </div>
           </div>
@@ -438,7 +451,7 @@ function dockConsole() {
 
       <!-- 右侧结果区 -->
       <div class="demo9__result demo9-result">
-        <ResultsView adjustable hide-download />
+        <ResultsView hide-download />
 
         <!-- AI 助手(对话记录 × 公式栏语法 × 建议 chips × 状态行回执) -->
         <section v-if="store.result && consoleMode === 'inline'" class="demo9__console" data-testid="ai-console">
@@ -677,6 +690,19 @@ function dockConsole() {
   flex-wrap: wrap;
 }
 
+.batch-bar__ops .batch-bar__op_item {
+  margin-right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.batch-bar__op_label {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
+}
+
 .batch-bar__ops .el-button+.el-button {
   margin-left: 0;
 }
@@ -897,7 +923,7 @@ function dockConsole() {
   border: 1px solid var(--el-color-primary-light-5);
   background: var(--el-color-primary-light-9);
   border-radius: 12px;
-  padding: 2px 10px;
+  padding: 6px 10px;
   font-size: 11px;
   font-weight: 600;
   color: var(--el-color-primary);
@@ -919,7 +945,7 @@ function dockConsole() {
   border-radius: 6px;
   padding: 5px 10px;
   border: 1px solid var(--el-border-color-lighter);
-  background: #dbdbdc;
+  background: #f0f0f0;
 }
 
 .fx-bar__input :deep(.el-input__wrapper) {

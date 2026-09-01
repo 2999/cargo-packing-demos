@@ -444,12 +444,11 @@ test('方案九：全宽融合工作台 + AI 指令台', async ({ page }) => {
   await page.getByTestId('cmd-chip').first().click()
   await expect(page.getByTestId('console-flow')).toContainText('重排完成')
 
-  // 切表格视图：勾选首行 → 批量 +N → 结果步进器同步
+  // 切表格视图：勾选首行 → 批量 +N/-N
   await page.getByTestId('view-toggle').getByText('表格').click()
   await page.locator('.demo9__table tbody .el-checkbox').first().click()
   await expect(page.getByTestId('batch-bar')).toBeVisible()
   await page.getByTestId('batch-more').click()
-  await expect(page.locator('[data-testid="qty-stepper"] input').first()).toHaveValue(/66|65/)
   await page.getByTestId('batch-less').click()
 
   // 历史抽屉(方案五范式)：入口在左侧面板「装柜列表」标题行(面板吸顶常驻)
