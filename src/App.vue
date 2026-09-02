@@ -28,7 +28,10 @@ const navItems = [
         </router-link>
       </nav>
     </header>
-    <main class="app-main" :class="{ 'app-main--wide': route.path === '/demo-9' }">
+    <main class="app-main" :class="{
+      'app-main--wide': route.path === '/demo-9',
+      'app-main--fit': route.path === '/',
+    }">
       <RouterView v-slot="{ Component }">
         <Transition name="page" mode="out-in">
           <component :is="Component" />
@@ -99,6 +102,33 @@ const navItems = [
 .app-main--wide {
   max-width: none;
   padding: 0;
+}
+
+/* 首页：锁定一屏高度，全部卡片不滚动展示；整体不超过 80% 宽 / 80% 高 */
+.app-main--fit {
+  max-width: 80%;
+  padding: 0;
+  width: 100%;
+  flex: 0 0 auto;
+  height: calc((100vh - 56px) * 0.8);
+  height: calc((100dvh - 56px) * 0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  /* 在剩余空间里水平 + 垂直居中 */
+  margin: auto;
+}
+
+/* 小屏放不下 9 张卡片，解锁滚动改为流式布局 */
+@media (max-width: 860px) {
+  .app-main--fit {
+    max-width: 80%;
+    height: auto;
+    min-height: calc((100vh - 56px) * 0.8);
+    min-height: calc((100dvh - 56px) * 0.8);
+    overflow: visible;
+  }
 }
 
 .page-enter-active,
