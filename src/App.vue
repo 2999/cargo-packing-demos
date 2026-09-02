@@ -104,9 +104,9 @@ const navItems = [
   padding: 0;
 }
 
-/* 首页：锁定一屏高度，全部卡片不滚动展示；整体不超过 80% 宽 / 80% 高 */
+/* 首页：锁定一屏高度，全部卡片不滚动展示；整体不超过 70% 宽 / 80% 高 */
 .app-main--fit {
-  max-width: 80%;
+  max-width: 70%;
   padding: 0;
   width: 100%;
   flex: 0 0 auto;
@@ -123,7 +123,7 @@ const navItems = [
 /* 小屏放不下 9 张卡片，解锁滚动改为流式布局 */
 @media (max-width: 860px) {
   .app-main--fit {
-    max-width: 80%;
+    max-width: 70%;
     height: auto;
     min-height: calc((100vh - 56px) * 0.8);
     min-height: calc((100dvh - 56px) * 0.8);

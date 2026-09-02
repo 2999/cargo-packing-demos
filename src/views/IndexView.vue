@@ -106,7 +106,8 @@ const cols = computed(() => Math.ceil(Math.sqrt(demos.length)))
   display: grid;
   grid-template-columns: repeat(var(--cols), 1fr);
   grid-auto-rows: 1fr;
-  gap: clamp(10px, 1.4vw, 20px);
+  /* 间距按视口比例缩放：横向 1.6vw、纵向 2.6vh，不设上限 */
+  gap: 2.6vh 1.6vw;
   min-width: 0;
 }
 
